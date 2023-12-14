@@ -12,6 +12,35 @@ Features:
 - 🔍 Explain, summarize, translate and improve the selection
 - 📑 Works with text selection and whole pages (subject to ChatGPT/Bard's message limits)
 
+## Installation guide
+
+1. Go to the extension directory:
+```
+cd chrome-extension
+```
+
+2. Install NPM packages:
+```
+npm i
+```
+
+3. Build the extension:
+```
+npm run build
+```
+
+4. Go to `chrome://extensions` in your browser (`Manage Extensions` button in your settings).
+
+5. Enable `Developer mode`:
+
+![](docs/developer-mode.png)
+
+6. Click `Load unpacked` and select `chrome-extension/dist` directory:
+
+![](docs/load-unpacked.png)
+
+7. Done ✅
+
 ## Stack & tools
 - React, TypeScript
 - Vite, CrxJS

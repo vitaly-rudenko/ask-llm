@@ -12,7 +12,6 @@ function getRootHtmlFiles() {
   return files.filter(file => file.isFile() && file.name.endsWith('.html')).map(file => file.name)
 }
 
-// https://vitejs.dev/config/
 export default defineConfig({
   build: {
     rollupOptions: {

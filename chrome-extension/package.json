@@ -1,7 +1,7 @@
 {
-  "name": "ask-llm-crx",
+  "name": "@ask-llm/chrome-extension",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "npm run cleanup && vite",
@@ -20,6 +20,6 @@
     "@types/chrome": "^0.0.254",
     "rimraf": "^5.0.5",
     "typescript": "^5.2.2",
-    "vite": "^5.0.8"
+    "vite": "^4.5.1"
   }
 }
