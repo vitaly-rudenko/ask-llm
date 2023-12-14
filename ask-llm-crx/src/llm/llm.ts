@@ -1,24 +1,28 @@
-export enum Question {
-  MANUAL = 'manual',
-  EXPLAIN = 'explain',
-  TLDR = 'tldr',
-  IMPROVE = 'improve',
-  TRANSLATE = 'translate',
-}
+export const Questions = {
+  MANUAL: 'manual',
+  EXPLAIN: 'explain',
+  TLDR: 'tldr',
+  IMPROVE: 'improve',
+  TRANSLATE: 'translate',
+  ANSWER: 'answer',
+} as const
 
-export enum ContextType {
-  PAGE = 'page',
-  TEXT = 'text',
-}
+export const ContextTypes = {
+  PAGE: 'page',
+  TEXT: 'text',
+} as const
 
-export enum Language {
-  ENGLISH = 'english',
-  UKRAINIAN = 'ukrainian',
-  RUSSIAN = 'russian',
-}
+export const Languages = {
+  ENGLISH: 'english',
+  UKRAINIAN: 'ukrainian',
+  RUSSIAN: 'russian',
+} as const
+export type Language = typeof Languages[keyof typeof Languages]
+export type ContextType = typeof ContextTypes[keyof typeof ContextTypes]
+export type Question = typeof Questions[keyof typeof Questions]
 
 export function isQuestionAutomatic(question: Question) {
-  return ![Question.MANUAL, Question.TRANSLATE].includes(question)
+  return ![Questions.MANUAL, Questions.TRANSLATE, Questions.ANSWER].includes(question)
 }
 
 export function createPrompt(input: {
@@ -30,18 +34,18 @@ export function createPrompt(input: {
   const question = input.question
 
   return [
-    input.language === Language.UKRAINIAN
+    input.language === Languages.UKRAINIAN
       ? `Використовуючи даний ${stringifyContextType(input)}:`
-      : input.language === Language.RUSSIAN
+      : input.language === Languages.RUSSIAN
       ? `Используя данный ${stringifyContextType(input)}:`
       : `Given this ${stringifyContextType(input)}:`,
     `"${input.context}"`,
     '',
-    question === Question.MANUAL ? '' : generateQuestion({
+    generateQuestion({
       question,
       contextType: input.contextType,
       language: input.language,
-    }) + ' ',
+    }),
   ].join('\n')
 }
 
@@ -53,32 +57,35 @@ function generateQuestion(input: {
   const stringifedContextType = stringifyContextType(input)
   const stringifiedLanguage = stringifyLanguage(input.language)
 
-  if (input.language === Language.UKRAINIAN) {
+  if (input.language === Languages.UKRAINIAN) {
     return {
-      [Question.MANUAL]: '',
-      [Question.EXPLAIN]: `Поясни наданий ${stringifedContextType} та надай висновки чи додаткові деталі за необхідності.`,
-      [Question.TLDR]: `Надай короткий опис (TL;DR) використовуючи наданий ${stringifedContextType}.`,
-      [Question.IMPROVE]: `Переглянь наданий ${stringifedContextType}, виправивши будь-які граматичні помилки, усунувши помилки друку, додавши відповідну пунктуацію, розставивши великі літери в реченнях та покращивши текст, зберігаючи початкову структуру.`,
-      [Question.TRANSLATE]: `Переклади наданий ${stringifedContextType}${stringifiedLanguage ? ` з ${stringifiedLanguage}` : ''} на`,
+      [Questions.MANUAL]: '',
+      [Questions.EXPLAIN]: `Поясни наданий ${stringifedContextType} та надай висновки чи додаткові деталі за необхідності. `,
+      [Questions.TLDR]: `Надай короткий опис (TL;DR) використовуючи наданий ${stringifedContextType}. `,
+      [Questions.IMPROVE]: `Переглянь наданий ${stringifedContextType}, виправивши будь-які граматичні помилки, усунувши помилки друку, додавши відповідну пунктуацію, розставивши великі літери в реченнях та покращивши текст, зберігаючи початкову структуру. `,
+      [Questions.TRANSLATE]: `Переклади наданий ${stringifedContextType}${stringifiedLanguage ? ` з ${stringifiedLanguage}` : ''} на `,
+      [Questions.ANSWER]: `Використовуючи наданий ${stringifedContextType}, напиши відповідь:\n`,
     }[input.question]
   }
 
-  if (input.language === Language.RUSSIAN) {
+  if (input.language === Languages.RUSSIAN) {
     return {
-      [Question.MANUAL]: '',
-      [Question.EXPLAIN]: `Объясни предоставленный ${stringifedContextType} и предложи дополнительные сведения или подробности при необходимости.`,
-      [Question.TLDR]: `Предоставь краткое изложение (TL;DR) используя предоставленный ${stringifedContextType}.`,
-      [Question.IMPROVE]: `Пересмотри предоставленный ${stringifedContextType}, исправив любые грамматические ошибки, исправив опечатки, добавив соответствующую пунктуацию, расставив заглавные буквы в предложениях и улучшив текст, сохраняя при этом исходную структуру.`,
-      [Question.TRANSLATE]: `Переведи предоставленный ${stringifedContextType}${stringifiedLanguage ? ` с ${stringifiedLanguage}` : ''} на`,
+      [Questions.MANUAL]: '',
+      [Questions.EXPLAIN]: `Объясни предоставленный ${stringifedContextType} и предложи дополнительные сведения или подробности при необходимости. `,
+      [Questions.TLDR]: `Предоставь краткое изложение (TL;DR) используя предоставленный ${stringifedContextType}. `,
+      [Questions.IMPROVE]: `Пересмотри предоставленный ${stringifedContextType}, исправив любые грамматические ошибки, исправив опечатки, добавив соответствующую пунктуацию, расставив заглавные буквы в предложениях и улучшив текст, сохраняя при этом исходную структуру. `,
+      [Questions.TRANSLATE]: `Переведи предоставленный ${stringifedContextType}${stringifiedLanguage ? ` с ${stringifiedLanguage}` : ''} на `,
+      [Questions.ANSWER]: `Используя предоставленный ${stringifedContextType}, напиши ответ:\n`,
     }[input.question]
   }
 
   return {
-    [Question.MANUAL]: '',
-    [Question.EXPLAIN]: `Explain the provided ${stringifedContextType} and offer insights or further details if necessary.`,
-    [Question.TLDR]: `Provide a brief summary (TL;DR) of the provided ${stringifedContextType}.`,
-    [Question.IMPROVE]: `Revise the provided ${stringifedContextType} by correcting any grammatical errors, fixing typos, adding appropriate punctuation, capitalizing sentences, and improving the writing while maintaining the original structure.`,
-    [Question.TRANSLATE]: `Translate the provided ${stringifedContextType}${stringifiedLanguage ? ` from ${stringifiedLanguage}` : ''} to`,
+    [Questions.MANUAL]: '',
+    [Questions.EXPLAIN]: `Explain the provided ${stringifedContextType} and offer insights or further details if necessary. `,
+    [Questions.TLDR]: `Provide a brief summary (TL;DR) of the provided ${stringifedContextType}. `,
+    [Questions.IMPROVE]: `Revise the provided ${stringifedContextType} by correcting any grammatical errors, fixing typos, adding appropriate punctuation, capitalizing sentences, and improving the writing while maintaining the original structure. `,
+    [Questions.TRANSLATE]: `Translate the provided ${stringifedContextType}${stringifiedLanguage ? ` from ${stringifiedLanguage}` : ''} to`,
+    [Questions.ANSWER]: `Using this ${stringifedContextType}, write an answer:\n`,
   }[input.question]
 }
 
@@ -86,29 +93,29 @@ export function stringifyContextType(input: {
   contextType: ContextType
   language: Language
 }) {
-  if (input.language === Language.UKRAINIAN) {
+  if (input.language === Languages.UKRAINIAN) {
     return {
-      [ContextType.TEXT]: 'текст',
-      [ContextType.PAGE]: 'веб-сайт',
+      [ContextTypes.TEXT]: 'текст',
+      [ContextTypes.PAGE]: 'веб-сайт',
     }[input.contextType]
   }
 
-  if (input.language === Language.RUSSIAN) {
+  if (input.language === Languages.RUSSIAN) {
     return {
-      [ContextType.TEXT]: 'текст',
-      [ContextType.PAGE]: 'веб-сайт',
+      [ContextTypes.TEXT]: 'текст',
+      [ContextTypes.PAGE]: 'веб-сайт',
     }[input.contextType]
   }
 
   return {
-    [ContextType.TEXT]: 'text',
-    [ContextType.PAGE]: 'webpage',
+    [ContextTypes.TEXT]: 'text',
+    [ContextTypes.PAGE]: 'webpage',
   }[input.contextType]
 }
 
 export function stringifyLanguage(language: Language) {
-  if (language === Language.ENGLISH) return 'English'
-  if (language === Language.UKRAINIAN) return 'української'
-  if (language === Language.RUSSIAN) return 'русского'
+  if (language === Languages.ENGLISH) return 'English'
+  if (language === Languages.UKRAINIAN) return 'української'
+  if (language === Languages.RUSSIAN) return 'русского'
   return undefined
 }

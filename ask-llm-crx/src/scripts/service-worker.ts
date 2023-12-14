@@ -1,4 +1,4 @@
-import { ContextType, Language, Question } from '../llm/llm'
+import { ContextType, ContextTypes, Language, Languages, Question, Questions } from '../llm/llm'
 
 chrome.runtime.onInstalled.addListener(() => {
   const menuId = chrome.contextMenus.create({
@@ -8,36 +8,43 @@ chrome.runtime.onInstalled.addListener(() => {
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Question.MANUAL}`,
+    id: `${menuId}:${Questions.MANUAL}`,
     title: 'Ask anything...',
     contexts: ['selection', 'page'],
     parentId: menuId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Question.EXPLAIN}`,
+    id: `${menuId}:${Questions.EXPLAIN}`,
     title: 'Explain',
     contexts: ['selection', 'page'],
     parentId: menuId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Question.TLDR}`,
+    id: `${menuId}:${Questions.TLDR}`,
     title: 'TL;DR',
     contexts: ['selection', 'page'],
     parentId: menuId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Question.IMPROVE}`,
+    id: `${menuId}:${Questions.IMPROVE}`,
     title: 'Improve',
     contexts: ['selection', 'page'],
     parentId: menuId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Question.TRANSLATE}`,
+    id: `${menuId}:${Questions.TRANSLATE}`,
     title: 'Translate',
+    contexts: ['selection', 'page'],
+    parentId: menuId,
+  })
+
+  chrome.contextMenus.create({
+    id: `${menuId}:${Questions.ANSWER}`,
+    title: 'Answer',
     contexts: ['selection', 'page'],
     parentId: menuId,
   })
@@ -49,17 +56,25 @@ chrome.contextMenus.onClicked.addListener(async (event, tab) => {
     const context = event.selectionText || await getPageContent(tab)
     if (!context) return
 
-    const question = menuId.split(':')[1]
+    const question = parseQuestion(menuId.split(':')[1])
     if (!question) return
 
     await askInChat({
       language: await detectLanguage(context),
       context,
-      contextType: event.selectionText ? ContextType.TEXT : ContextType.PAGE,
-      question: question as Question,
+      contextType: event.selectionText ? ContextTypes.TEXT : ContextTypes.PAGE,
+      question,
     })
   }
 })
+
+function parseQuestion(input: string): Question | undefined {
+  if (Object.values(Questions).includes(input as Question)) {
+    return input as Question
+  }
+
+  return undefined
+}
 
 async function askInChat(input: {
   language: Language
@@ -76,15 +91,15 @@ async function askInChat(input: {
 
 async function detectLanguage(context: string) {
   const languageDetectionResult = await chrome.i18n.detectLanguage(context)
-  if (!languageDetectionResult.isReliable) return Language.ENGLISH
+  if (!languageDetectionResult.isReliable) return Languages.ENGLISH
 
   for (const language of languageDetectionResult.languages) {
-    if (['en', 'eng'].includes(language.language)) return Language.ENGLISH
-    if (['uk', 'ukr'].includes(language.language)) return Language.UKRAINIAN
-    if (['ru', 'rus'].includes(language.language)) return Language.RUSSIAN
+    if (['en', 'eng'].includes(language.language)) return Languages.ENGLISH
+    if (['uk', 'ukr'].includes(language.language)) return Languages.UKRAINIAN
+    if (['ru', 'rus'].includes(language.language)) return Languages.RUSSIAN
   }
 
-  return Language.ENGLISH
+  return Languages.ENGLISH
 }
 
 async function getPageContent(tab: chrome.tabs.Tab) {

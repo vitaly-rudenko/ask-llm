@@ -8,8 +8,6 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
   if (!promptInput) return
   promptInput.focus()
 
-  console.log(message)
-
   setInputValue(
     promptInput,
     createPrompt({
