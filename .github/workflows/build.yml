@@ -1,0 +1,34 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+      - github-actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        working-directory: ./chrome-extension
+        run: npm install
+
+      - name: Build
+        working-directory: ./chrome-extension
+        run: npm run build
+
+      - name: Archive dist folder
+        uses: montudor/action-zip@v1.0.0
+        with:
+          args: zip -r chrome-extension.zip chrome-extension/dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: chrome-extension
+          path: chrome-extension.zip
