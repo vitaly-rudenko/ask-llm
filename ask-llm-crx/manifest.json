@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Ask LLM",
+  "version": "0.1.0",
+  "incognito": "spanning",
+  "action": { "default_popup": "popup.html" },
+  "background": {
+    "service_worker": "src/scripts/service-worker.ts"
+  },
+  "permissions": ["activeTab", "contextMenus", "notifications", "storage", "scripting"],
+  "content_scripts": [
+    {
+      "js": ["src/scripts/content-script.ts"],
+      "matches": ["https://chat.openai.com/*"]
+    }
+  ]
+}
