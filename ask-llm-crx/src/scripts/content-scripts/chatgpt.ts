@@ -1,10 +1,11 @@
-import { createPrompt, isQuestionAutomatic } from '../llm/llm'
+import { createPrompt, isQuestionAutomatic } from '../../llm/llm'
+import { waitForElement } from '../../utils/waitForElement'
 
 chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
   if (message.name === 'health') return sendResponse('ok')
   if (message.name !== 'question') throw new Error('Invalid message')
 
-  const promptInput = window.document.getElementById('prompt-textarea') as HTMLInputElement
+  const promptInput = await waitForElement<HTMLInputElement>('#prompt-textarea')
   if (!promptInput) return
   promptInput.focus()
 
@@ -12,7 +13,6 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
     promptInput,
     createPrompt({
       context: message.data.context,
-      contextType: message.data.contextType,
       language: message.data.language,
       question: message.data.question,
     })
@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
   promptInput.scrollTo({ top: promptInput.scrollHeight, behavior: 'instant' })
 
   if (isQuestionAutomatic(message.data.question)) {
-    const sendButton = window.document.querySelector<HTMLButtonElement>('button[data-testid="send-button"]')
+    const sendButton = await waitForElement<HTMLButtonElement>('button[data-testid="send-button"]')
     if (sendButton) {
       try { sendButton.click() } catch {}
     }

@@ -10,8 +10,18 @@
   "permissions": ["activeTab", "contextMenus", "notifications", "storage", "scripting"],
   "content_scripts": [
     {
-      "js": ["src/scripts/content-script.ts"],
+      "js": ["src/scripts/content-scripts/chatgpt.ts"],
       "matches": ["https://chat.openai.com/*"]
+    },
+    {
+      "js": ["src/scripts/content-scripts/bard.ts"],
+      "matches": ["https://bard.google.com/chat*"]
     }
-  ]
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
 }

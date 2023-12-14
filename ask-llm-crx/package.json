@@ -4,17 +4,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev": "npm run cleanup && vite",
+    "build": "npm run cleanup && tsc && vite build",
+    "preview": "vite preview",
+    "cleanup": "rimraf dist"
   },
   "dependencies": {
+    "@types/common-tags": "^1.8.4",
+    "common-tags": "^1.8.2",
     "preact": "^10.19.3"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.21",
     "@preact/preset-vite": "^2.7.0",
     "@types/chrome": "^0.0.254",
+    "rimraf": "^5.0.5",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }

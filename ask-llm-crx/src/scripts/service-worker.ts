@@ -1,70 +1,108 @@
-import { ContextType, ContextTypes, Language, Languages, Question, Questions } from '../llm/llm'
+import { Language, Languages, Llm, Llms, Question, Questions } from '../llm/llm'
 
-chrome.runtime.onInstalled.addListener(() => {
-  const menuId = chrome.contextMenus.create({
+chrome.runtime.onInstalled.addListener(async () => {
+  const parentId = chrome.contextMenus.create({
     id: 'ask-llm',
     title: 'Ask LLM',
     contexts: ['selection', 'page'],
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Questions.MANUAL}`,
+    id: `${parentId}:question:${Questions.MANUAL}`,
     title: 'Ask anything...',
     contexts: ['selection', 'page'],
-    parentId: menuId,
+    parentId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Questions.EXPLAIN}`,
-    title: 'Explain',
+    id: `${parentId}:question:${Questions.TRANSLATE}`,
+    title: 'Translate...',
     contexts: ['selection', 'page'],
-    parentId: menuId,
+    parentId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Questions.TLDR}`,
-    title: 'TL;DR',
+    id: `${parentId}:question:${Questions.ANSWER}`,
+    title: 'Write an answer...',
     contexts: ['selection', 'page'],
-    parentId: menuId,
+    parentId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Questions.IMPROVE}`,
-    title: 'Improve',
+    id: `${parentId}:separator-1`,
+    type: 'separator',
     contexts: ['selection', 'page'],
-    parentId: menuId,
+    parentId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Questions.TRANSLATE}`,
-    title: 'Translate',
+    id: `${parentId}:question:${Questions.EXPLAIN}`,
+    title: 'Explain the topic',
     contexts: ['selection', 'page'],
-    parentId: menuId,
+    parentId,
   })
 
   chrome.contextMenus.create({
-    id: `${menuId}:${Questions.ANSWER}`,
-    title: 'Answer',
+    id: `${parentId}:question:${Questions.TLDR}`,
+    title: 'Summarize (TL;DR)',
     contexts: ['selection', 'page'],
-    parentId: menuId,
+    parentId,
+  })
+
+  chrome.contextMenus.create({
+    id: `${parentId}:question:${Questions.IMPROVE}`,
+    title: 'Proofread && improve',
+    contexts: ['selection', 'page'],
+    parentId,
+  })
+
+  chrome.contextMenus.create({
+    id: `${parentId}:question:${Questions.QUIZ}`,
+    title: 'Create a quiz',
+    contexts: ['selection', 'page'],
+    parentId,
+  })
+
+  chrome.contextMenus.create({
+    id: `${parentId}:separator-2`,
+    type: 'separator',
+    contexts: ['selection', 'page'],
+    parentId,
+  })
+
+  const { useBard = false } = await chrome.storage.local.get(['useBard'])
+
+  chrome.contextMenus.create({
+    id: `${parentId}:use-bard`,
+    title: 'Use Google Bard',
+    contexts: ['all'],
+    checked: useBard,
+    type: 'checkbox',
+    parentId,
   })
 })
 
 chrome.contextMenus.onClicked.addListener(async (event, tab) => {
   const menuId = String(event.menuItemId)
-  if (tab?.id && menuId.startsWith('ask-llm')) {
+  if (menuId.startsWith('ask-llm:question:')) {
+    if (!tab) return
+
     const context = event.selectionText || await getPageContent(tab)
     if (!context) return
 
-    const question = parseQuestion(menuId.split(':')[1])
+    const question = parseQuestion(menuId.split(':')[2])
     if (!question) return
 
+    const { useBard } = await chrome.storage.local.get(['useBard'])
+
     await askInChat({
+      llm: useBard ? Llms.BARD : Llms.CHATGPT,
       language: await detectLanguage(context),
       context,
-      contextType: event.selectionText ? ContextTypes.TEXT : ContextTypes.PAGE,
       question,
     })
+  } else if (menuId ==='ask-llm:use-bard') {
+    await chrome.storage.local.set({ useBard: event.checked })
   }
 })
 
@@ -77,12 +115,12 @@ function parseQuestion(input: string): Question | undefined {
 }
 
 async function askInChat(input: {
+  llm: Llm
   language: Language
   context: string
-  contextType: ContextType
   question: Question
 }) {
-  const chatTab = await openChatTab()
+  const chatTab = await openChatTab(input.llm)
   await chrome.tabs.sendMessage(chatTab.id!, {
     name: 'question',
     data: input
@@ -91,7 +129,6 @@ async function askInChat(input: {
 
 async function detectLanguage(context: string) {
   const languageDetectionResult = await chrome.i18n.detectLanguage(context)
-  if (!languageDetectionResult.isReliable) return Languages.ENGLISH
 
   for (const language of languageDetectionResult.languages) {
     if (['en', 'eng'].includes(language.language)) return Languages.ENGLISH
@@ -114,21 +151,22 @@ async function getPageContent(tab: chrome.tabs.Tab) {
 }
 
 async function waitForChat(tab: chrome.tabs.Tab) {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 10; i++) {
     try {
       const response = await chrome.tabs.sendMessage(tab.id!, { name: 'health' });
       if (response === 'ok') return
     } catch {}
 
-    await new Promise(resolve => setTimeout(resolve, 100 * i))
+    await new Promise(resolve => setTimeout(resolve, 50 * i))
   }
 
   throw new Error('Chat tab is not responsive')
 }
 
-async function openChatTab() {
-  const { tabId } = await chrome.storage.local.get(['windowId', 'tabId'])
-  if (tabId) {
+async function openChatTab(desiredLlm: Llm) {
+  const { tabId, llm } = await chrome.storage.local.get(['tabId', 'llm'])
+  console.log({ tabId, llm, desiredLlm })
+  if (tabId && llm === desiredLlm) {
     try {
       const tab = await chrome.tabs.get(tabId)
       await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {})
@@ -139,11 +177,11 @@ async function openChatTab() {
   }
 
   const { left = 0, top = 0, width = 1280, height = 720 } = await chrome.windows.getCurrent()
-  const popupSize = Math.max(Math.min(width, height) * 0.5, 720)
+  const popupSize = Math.max(Math.min(width, height) * 0.5, 1000)
 
   const window = await chrome.windows.create({
     focused: true,
-    url: 'https://chat.openai.com/',
+    url: desiredLlm === 'chatgpt' ? 'https://chat.openai.com' : 'https://bard.google.com/chat',
     width: popupSize,
     height: popupSize,
     left: Math.trunc(left + (width - popupSize) / 2),
@@ -156,7 +194,7 @@ async function openChatTab() {
   }
 
   await waitForChat(tab)
-  await chrome.storage.local.set({ tabId: tab.id })
+  await chrome.storage.local.set({ tabId: tab.id, llm: desiredLlm })
 
   return tab
 }
