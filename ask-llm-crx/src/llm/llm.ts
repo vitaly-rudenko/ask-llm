@@ -84,7 +84,7 @@ function generateQuestion(input: {
     [Questions.EXPLAIN]: `Explain the provided ${stringifedContextType} and offer insights or further details if necessary. `,
     [Questions.TLDR]: `Provide a brief summary (TL;DR) of the provided ${stringifedContextType}. `,
     [Questions.IMPROVE]: `Revise the provided ${stringifedContextType} by correcting any grammatical errors, fixing typos, adding appropriate punctuation, capitalizing sentences, and improving the writing while maintaining the original structure. `,
-    [Questions.TRANSLATE]: `Translate the provided ${stringifedContextType}${stringifiedLanguage ? ` from ${stringifiedLanguage}` : ''} to`,
+    [Questions.TRANSLATE]: `Translate the provided ${stringifedContextType}${stringifiedLanguage ? ` from ${stringifiedLanguage}` : ''} to `,
     [Questions.ANSWER]: `Using this ${stringifedContextType}, write an answer:\n`,
   }[input.question]
 }
