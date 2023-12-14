@@ -56,20 +56,20 @@ function generateQuestion(input: {
   if (input.language === Language.UKRAINIAN) {
     return {
       [Question.MANUAL]: '',
-      [Question.EXPLAIN]: `Поясніть наданий ${stringifedContextType} та надайте висновки чи додаткові деталі за необхідності.`,
-      [Question.TLDR]: `Надайте короткий опис (TL;DR) використовуючи наданий ${stringifedContextType}.`,
-      [Question.IMPROVE]: `Перегляньте наданий ${stringifedContextType}, виправивши будь-які граматичні помилки, усунувши помилки друку, додавши відповідну пунктуацію, розставивши великі літери в реченнях та покращивши текст, зберігаючи початкову структуру.`,
-      [Question.TRANSLATE]: `Перекладіть наданий ${stringifedContextType}${stringifiedLanguage ? ` з ${stringifiedLanguage}` : ''} на`,
+      [Question.EXPLAIN]: `Поясни наданий ${stringifedContextType} та надай висновки чи додаткові деталі за необхідності.`,
+      [Question.TLDR]: `Надай короткий опис (TL;DR) використовуючи наданий ${stringifedContextType}.`,
+      [Question.IMPROVE]: `Переглянь наданий ${stringifedContextType}, виправивши будь-які граматичні помилки, усунувши помилки друку, додавши відповідну пунктуацію, розставивши великі літери в реченнях та покращивши текст, зберігаючи початкову структуру.`,
+      [Question.TRANSLATE]: `Переклади наданий ${stringifedContextType}${stringifiedLanguage ? ` з ${stringifiedLanguage}` : ''} на`,
     }[input.question]
   }
 
   if (input.language === Language.RUSSIAN) {
     return {
       [Question.MANUAL]: '',
-      [Question.EXPLAIN]: `Объясните предоставленный ${stringifedContextType} и предложите дополнительные сведения или подробности при необходимости.`,
-      [Question.TLDR]: `Предоставьте краткое изложение (TL;DR) используя предоставленный ${stringifedContextType}.`,
-      [Question.IMPROVE]: `Пересмотрите предоставленный ${stringifedContextType}, исправив любые грамматические ошибки, исправив опечатки, добавив соответствующую пунктуацию, расставив заглавные буквы в предложениях и улучшив текст, сохраняя при этом исходную структуру.`,
-      [Question.TRANSLATE]: `Переведите предоставленный ${stringifedContextType}${stringifiedLanguage ? ` с ${stringifiedLanguage}` : ''} на`,
+      [Question.EXPLAIN]: `Объясни предоставленный ${stringifedContextType} и предложи дополнительные сведения или подробности при необходимости.`,
+      [Question.TLDR]: `Предоставь краткое изложение (TL;DR) используя предоставленный ${stringifedContextType}.`,
+      [Question.IMPROVE]: `Пересмотри предоставленный ${stringifedContextType}, исправив любые грамматические ошибки, исправив опечатки, добавив соответствующую пунктуацию, расставив заглавные буквы в предложениях и улучшив текст, сохраняя при этом исходную структуру.`,
+      [Question.TRANSLATE]: `Переведи предоставленный ${stringifedContextType}${stringifiedLanguage ? ` с ${stringifiedLanguage}` : ''} на`,
     }[input.question]
   }
 
