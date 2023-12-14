@@ -21,7 +21,7 @@ jobs:
         run: npm run build
 
       - name: Archive dist folder
-        uses: montudor/action-zip@v0.3.0
+        uses: montudor/action-zip@v1.0.0
         with:
           args: zip -r dist.zip dist/
 
