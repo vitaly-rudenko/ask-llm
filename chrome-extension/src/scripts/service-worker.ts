@@ -4,69 +4,69 @@ chrome.runtime.onInstalled.addListener(async () => {
   const parentId = chrome.contextMenus.create({
     id: 'ask-llm',
     title: 'Ask LLM',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.MANUAL}`,
     title: 'Ask anything...',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.TRANSLATE}`,
     title: 'Translate...',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.ANSWER}`,
     title: 'Write an answer...',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:separator-1`,
     type: 'separator',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.EXPLAIN}`,
     title: 'Explain the topic',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.TLDR}`,
     title: 'Summarize (TL;DR)',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.IMPROVE}`,
     title: 'Proofread && improve',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:question:${Questions.QUIZ}`,
     title: 'Create a quiz',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
   chrome.contextMenus.create({
     id: `${parentId}:separator-2`,
     type: 'separator',
-    contexts: ['selection', 'page'],
+    contexts: ['all'],
     parentId,
   })
 
@@ -87,7 +87,11 @@ chrome.contextMenus.onClicked.addListener(async (event, tab) => {
   if (menuId.startsWith('ask-llm:question:')) {
     if (!tab) return
 
-    const context = event.selectionText || await getPageContent(tab)
+    const context = parseContext(
+      event.selectionText
+        ? (await getPageSelection(tab) || event.selectionText)
+        : await getPageContent(tab)
+    )
     if (!context) return
 
     const question = parseQuestion(menuId.split(':')[2])
@@ -105,6 +109,12 @@ chrome.contextMenus.onClicked.addListener(async (event, tab) => {
     await chrome.storage.local.set({ useBard: event.checked })
   }
 })
+
+function parseContext(input: string | undefined): string | undefined {
+  if (!input) return undefined
+  input = input.trim()
+  return input || undefined
+}
 
 function parseQuestion(input: string): Question | undefined {
   if (Object.values(Questions).includes(input as Question)) {
@@ -137,6 +147,18 @@ async function detectLanguage(context: string) {
   }
 
   return Languages.ENGLISH
+}
+
+// Better than event.selectionText because this preserves line breaks
+async function getPageSelection(tab: chrome.tabs.Tab) {
+  const results = await chrome.scripting.executeScript( {
+    func: () => window.getSelection()?.toString(),
+    target: { tabId: tab.id! },
+  })
+
+  if (results[0].result) {
+    return results[0].result
+  }
 }
 
 async function getPageContent(tab: chrome.tabs.Tab) {

@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Ask LLM",
-  "version": "0.1.0",
+  "description": "Direct, private access to ChatGPT/Bard for fast, API-free text queries and enhancements.",
+  "version": "1.0.0",
   "incognito": "spanning",
   "action": { "default_popup": "popup.html" },
   "background": {
