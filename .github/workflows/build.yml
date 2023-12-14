@@ -14,21 +14,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Go to Chrome extension directory
-        run: cd chrome-extension
-
       - name: Install dependencies
+        working-directory: ./chrome-extension
         run: npm install
 
       - name: Build
+        working-directory: ./chrome-extension
         run: npm run build
 
       - name: Archive dist folder
+        working-directory: ./chrome-extension
         uses: montudor/action-zip@v1.0.0
         with:
           args: zip -r dist.zip dist/
 
       - name: Upload artifact
+        working-directory: ./chrome-extension
         uses: actions/upload-artifact@v2
         with:
           name: dist
