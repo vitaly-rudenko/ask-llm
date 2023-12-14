@@ -14,6 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Go to Chrome extension directory
+        run: cd chrome-extension
+
       - name: Install dependencies
         run: npm install
 
