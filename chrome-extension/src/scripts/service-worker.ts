@@ -11,7 +11,11 @@ const Targets = {
 type Target = typeof Targets[keyof typeof Targets]
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const parentId = chrome.contextMenus.create({ id: 'ask-llm', title: 'Ask LLM', contexts: ['all'] })
+  const parentId = chrome.contextMenus.create({
+    id: 'ask-llm',
+    title: 'Ask LLM',
+    contexts: ['all'],
+  })
 
   function addAction(action: Action, title: Record<Target, string>) {
     for (const target of Object.values(Targets)) {
@@ -31,7 +35,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     chrome.contextMenus.create({ id: `${parentId}:separator-${++separatorId}`, type: 'separator', contexts: ['all'], parentId })
   }
 
-  addAction(Actions.USE, { page: 'Ask anything about page...', selection: 'Ask anything about selection...', link: 'Ask anything about link...' })
+  addAction(Actions.USE, { page: 'Use page as context...', selection: 'Use selection as context...', link: 'Use link as context...' })
   addAction(Actions.TRANSLATE, { page: 'Translate page...', selection: 'Translate selection...', link: 'Translate link...' })
   addAction(Actions.ANSWER, { page: 'Write an answer to page...', selection: 'Write an answer to selection...', link: 'Write an answer to link...' })
 

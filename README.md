@@ -4,12 +4,12 @@
 
 ## Description
 
-This Chrome extension allows you to quickly open chat with LLM (ChatGPT or Bard) to ask questions, summarize and analyze selected text.
+This Chrome extension lets you easily open a chat with LLM (ChatGPT or Bard) to ask questions about selected text, explain a link's contents, or create a quiz for the page.
 
 Features:
 - 💵 Free: uses ChatGPT/Bard chat directly (without OpenAI/Google APIs)
 - 🔒 Safe: this extension does not store anything related to your Google or OpenAI accounts
-- 🔍 Explain, summarize, translate and improve the selected text or the whole page
+- 🔍 Explain, summarize, translate, and improve the selected text, whole page, or links
 - 💡 Create quizzes to test your knowledge
 
 ## Installation guide
