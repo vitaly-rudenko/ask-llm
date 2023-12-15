@@ -47,5 +47,5 @@ npm run build
 - Chrome Extension API
 
 ## Commands
-- `npm run dev` – run bot locally
+- `npm run dev` – create a live development build
 - `npm run build` – create a production build
