@@ -1,77 +1,50 @@
-import { Language, Languages, Llm, Llms, Question, Questions } from '../llm/llm'
+import { Llms, Action, Actions } from '../llm/llm'
+import { askInChat } from '../utils/chat'
+import { getPageContent, getLinkContent, getPageSelection, detectLanguage } from '../utils/chrome'
+
+const Targets = {
+  PAGE: 'page',
+  LINK: 'link',
+  SELECTION: 'selection',
+} as const
+
+type Target = typeof Targets[keyof typeof Targets]
 
 chrome.runtime.onInstalled.addListener(async () => {
-  const parentId = chrome.contextMenus.create({
-    id: 'ask-llm',
-    title: 'Ask LLM',
-    contexts: ['all'],
-  })
+  const parentId = chrome.contextMenus.create({ id: 'ask-llm', title: 'Ask LLM', contexts: ['all'] })
 
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.MANUAL}`,
-    title: 'Ask anything...',
-    contexts: ['all'],
-    parentId,
-  })
+  function addAction(action: Action, title: Record<Target, string>) {
+    for (const target of Object.values(Targets)) {
+      if (title[target]) {
+        chrome.contextMenus.create({
+          id: `${parentId}:action:${action}:${target}`,
+          title: title[target],
+          contexts: [target as chrome.contextMenus.ContextType],
+          parentId,
+        })
+      }
+    }
+  }
 
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.TRANSLATE}`,
-    title: 'Translate...',
-    contexts: ['all'],
-    parentId,
-  })
+  let separatorId = 0
+  function addSeparator() {
+    chrome.contextMenus.create({ id: `${parentId}:separator-${++separatorId}`, type: 'separator', contexts: ['all'], parentId })
+  }
 
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.ANSWER}`,
-    title: 'Write an answer...',
-    contexts: ['all'],
-    parentId,
-  })
+  addAction(Actions.USE, { page: 'Ask anything about page...', selection: 'Ask anything about selection...', link: 'Ask anything about link...' })
+  addAction(Actions.TRANSLATE, { page: 'Translate page...', selection: 'Translate selection...', link: 'Translate link...' })
+  addAction(Actions.ANSWER, { page: 'Write an answer to page...', selection: 'Write an answer to selection...', link: 'Write an answer to link...' })
 
-  chrome.contextMenus.create({
-    id: `${parentId}:separator-1`,
-    type: 'separator',
-    contexts: ['all'],
-    parentId,
-  })
+  addSeparator()
 
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.EXPLAIN}`,
-    title: 'Explain the topic',
-    contexts: ['all'],
-    parentId,
-  })
+  addAction(Actions.EXPLAIN, { page: 'Explain page', selection: 'Explain selection', link: 'Explain link' })
+  addAction(Actions.SUMMARIZE, { page: 'Summarize page (TL;DR)', selection: 'Summarize selection (TL;DR)', link: 'Summarize link (TL;DR)' })
+  addAction(Actions.IMPROVE, { page: 'Proofread && improve page', selection: 'Proofread && improve selection', link: 'Proofread && improve link' })
+  addAction(Actions.QUIZ, { page: 'Create a quiz for page', selection: 'Create a quiz for selection', link: 'Create a quiz for link' })
 
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.TLDR}`,
-    title: 'Summarize (TL;DR)',
-    contexts: ['all'],
-    parentId,
-  })
-
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.IMPROVE}`,
-    title: 'Proofread && improve',
-    contexts: ['all'],
-    parentId,
-  })
-
-  chrome.contextMenus.create({
-    id: `${parentId}:question:${Questions.QUIZ}`,
-    title: 'Create a quiz',
-    contexts: ['all'],
-    parentId,
-  })
-
-  chrome.contextMenus.create({
-    id: `${parentId}:separator-2`,
-    type: 'separator',
-    contexts: ['all'],
-    parentId,
-  })
+  addSeparator()
 
   const { useBard = false } = await chrome.storage.local.get(['useBard'])
-
   chrome.contextMenus.create({
     id: `${parentId}:use-bard`,
     title: 'Use Google Bard',
@@ -84,139 +57,51 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 chrome.contextMenus.onClicked.addListener(async (event, tab) => {
   const menuId = String(event.menuItemId)
-  if (menuId.startsWith('ask-llm:question:')) {
+  if (menuId.startsWith('ask-llm:action:')) {
     if (!tab) return
 
-    const context = parseContext(
-      event.selectionText
-        ? (await getPageSelection(tab) || event.selectionText)
-        : await getPageContent(tab)
-    )
+    const { action, target } = parseMenuId(menuId)
+    if (!action || !target) return
+
+    let unsanitizedContext: string | undefined
+    if (target === 'page' && event.pageUrl) {
+      unsanitizedContext = await getPageContent(tab)
+    } else if (target === 'link' && event.linkUrl) {
+      unsanitizedContext = await getLinkContent(event.linkUrl)
+    } else if (target === 'selection' && event.selectionText) {
+      unsanitizedContext = await getPageSelection(tab) || event.selectionText
+    } else {
+      unsanitizedContext = (
+        event.selectionText && (await getPageSelection(tab) || event.selectionText) ||
+        event.linkUrl && await getLinkContent(event.linkUrl) ||
+        await getPageContent(tab)
+      )
+    }
+
+    const context = sanitizeContext(unsanitizedContext)
     if (!context) return
 
-    const question = parseQuestion(menuId.split(':')[2])
-    if (!question) return
-
     const { useBard } = await chrome.storage.local.get(['useBard'])
-
     await askInChat({
       llm: useBard ? Llms.BARD : Llms.CHATGPT,
       language: await detectLanguage(context),
       context,
-      question,
+      action,
     })
   } else if (menuId ==='ask-llm:use-bard') {
     await chrome.storage.local.set({ useBard: event.checked })
   }
 })
 
-function parseContext(input: string | undefined): string | undefined {
-  if (!input) return undefined
-  input = input.trim()
-  return input || undefined
+function sanitizeContext(input: string | undefined): string | undefined {
+  return input && input.replace(/[^\S\n]+/g, ' ').trim() || undefined
 }
 
-function parseQuestion(input: string): Question | undefined {
-  if (Object.values(Questions).includes(input as Question)) {
-    return input as Question
+function parseMenuId(menuId: string) {
+  const [action, target] = menuId.split(':').slice(2)
+
+  return {
+    action: Object.values(Actions).includes(action as Action) ? action as Action : undefined,
+    target: Object.values(Targets).includes(target as Target) ? target as Target : undefined,
   }
-
-  return undefined
-}
-
-async function askInChat(input: {
-  llm: Llm
-  language: Language
-  context: string
-  question: Question
-}) {
-  const chatTab = await openChatTab(input.llm)
-  await chrome.tabs.sendMessage(chatTab.id!, {
-    name: 'question',
-    data: input
-  })
-}
-
-async function detectLanguage(context: string) {
-  const languageDetectionResult = await chrome.i18n.detectLanguage(context)
-
-  for (const language of languageDetectionResult.languages) {
-    if (['en', 'eng'].includes(language.language)) return Languages.ENGLISH
-    if (['uk', 'ukr'].includes(language.language)) return Languages.UKRAINIAN
-    if (['ru', 'rus'].includes(language.language)) return Languages.RUSSIAN
-  }
-
-  return Languages.ENGLISH
-}
-
-// Better than event.selectionText because this preserves line breaks
-async function getPageSelection(tab: chrome.tabs.Tab) {
-  const results = await chrome.scripting.executeScript( {
-    func: () => window.getSelection()?.toString(),
-    target: { tabId: tab.id! },
-  })
-
-  if (results[0].result) {
-    return results[0].result
-  }
-}
-
-async function getPageContent(tab: chrome.tabs.Tab) {
-  const results = await chrome.scripting.executeScript({
-    target: { tabId: tab.id! },
-    func: () => document.body.innerText || document.body.textContent,
-  })
-
-  if (results[0].result) {
-    return results[0].result
-  }
-}
-
-async function waitForChat(tab: chrome.tabs.Tab) {
-  for (let i = 0; i < 10; i++) {
-    try {
-      const response = await chrome.tabs.sendMessage(tab.id!, { name: 'health' });
-      if (response === 'ok') return
-    } catch {}
-
-    await new Promise(resolve => setTimeout(resolve, 50 * i))
-  }
-
-  throw new Error('Chat tab is not responsive')
-}
-
-async function openChatTab(desiredLlm: Llm) {
-  const { tabId, llm } = await chrome.storage.local.get(['tabId', 'llm'])
-  console.log({ tabId, llm, desiredLlm })
-  if (tabId && llm === desiredLlm) {
-    try {
-      const tab = await chrome.tabs.get(tabId)
-      await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {})
-      await chrome.tabs.update(tab.id!, { active: true }).catch(() => {})
-      await waitForChat(tab)
-      return tab
-    } catch (error) {}
-  }
-
-  const { left = 0, top = 0, width = 1280, height = 720 } = await chrome.windows.getCurrent()
-  const popupSize = Math.max(Math.min(width, height) * 0.5, 1000)
-
-  const window = await chrome.windows.create({
-    focused: true,
-    url: desiredLlm === 'chatgpt' ? 'https://chat.openai.com' : 'https://bard.google.com/chat',
-    width: popupSize,
-    height: popupSize,
-    left: Math.trunc(left + (width - popupSize) / 2),
-    top: Math.trunc(top + (height - popupSize) / 2),
-  })
-
-  const tab = window.tabs?.[0]
-  if (!tab) {
-    throw new Error('Could not create chat tab')
-  }
-
-  await waitForChat(tab)
-  await chrome.storage.local.set({ tabId: tab.id, llm: desiredLlm })
-
-  return tab
 }
