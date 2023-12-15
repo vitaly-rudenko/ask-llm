@@ -1,18 +1,18 @@
-import { createPrompt, isQuestionAutomatic } from '../../llm/llm'
+import { generatePrompt, isActionAutomatic } from '../../llm/llm'
 import { waitForElement } from '../../utils/waitForElement'
 
 chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
   if (message.name === 'health') return sendResponse('ok')
-  if (message.name !== 'question') throw new Error('Invalid message')
+  if (message.name !== 'action') throw new Error('Invalid message')
 
   const promptInput = await waitForElement<HTMLParagraphElement>('div.textarea[contenteditable=true]')
   if (!promptInput) return
   promptInput.replaceChildren()
 
-  const lines = createPrompt({
+  const lines = generatePrompt({
     context: message.data.context,
     language: message.data.language,
-    question: message.data.question,
+    action: message.data.action,
   }).split('\n')
 
   for (const line of lines) {
@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
 
   promptInput.focus()
 
-  if (isQuestionAutomatic(message.data.question)) {
+  if (isActionAutomatic(message.data.action)) {
     const sendButton = await waitForElement<HTMLButtonElement>('.send-button-container > button')
     if (sendButton) {
       try { sendButton.click() } catch {}

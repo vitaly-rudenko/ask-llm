@@ -1,9 +1,10 @@
-import { createPrompt, isQuestionAutomatic } from '../../llm/llm'
+import { generatePrompt, isActionAutomatic } from '../../llm/llm'
+import { wait } from '../../utils/wait'
 import { waitForElement } from '../../utils/waitForElement'
 
 chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
   if (message.name === 'health') return sendResponse('ok')
-  if (message.name !== 'question') throw new Error('Invalid message')
+  if (message.name !== 'action') throw new Error('Invalid message')
 
   const promptInput = await waitForElement<HTMLInputElement>('#prompt-textarea')
   if (!promptInput) return
@@ -11,19 +12,26 @@ chrome.runtime.onMessage.addListener(async (message, _, sendResponse) => {
 
   setInputValue(
     promptInput,
-    createPrompt({
+    generatePrompt({
       context: message.data.context,
       language: message.data.language,
-      question: message.data.question,
+      action: message.data.action,
     })
   )
 
   promptInput.scrollTo({ top: promptInput.scrollHeight, behavior: 'instant' })
 
-  if (isQuestionAutomatic(message.data.question)) {
+  if (isActionAutomatic(message.data.action)) {
     const sendButton = await waitForElement<HTMLButtonElement>('button[data-testid="send-button"]')
     if (sendButton) {
       try { sendButton.click() } catch {}
+    }
+
+    await wait(1000)
+
+    const scrollToBottomButton = await waitForElement<HTMLButtonElement>('button.cursor-pointer ')
+    if (scrollToBottomButton) {
+      try { scrollToBottomButton.click() } catch {}
     }
   }
 })
