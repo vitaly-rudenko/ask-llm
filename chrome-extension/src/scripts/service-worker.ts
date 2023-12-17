@@ -88,7 +88,7 @@ chrome.contextMenus.onClicked.addListener(async (event, tab) => {
     const { useBard } = await chrome.storage.local.get(['useBard'])
     await askInChat({
       llm: useBard ? Llms.BARD : Llms.CHATGPT,
-      language: await detectLanguage(context),
+      language: await detectLanguage(context, tab),
       context,
       action,
     })

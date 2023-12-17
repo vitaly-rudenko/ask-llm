@@ -41,6 +41,17 @@ npm run build
 
 7. Done ✅
 
+### Safari
+
+```
+npm run build
+xcrun safari-web-extension-converter --app-name safari-extension --macos-only --no-open --no-prompt --force --copy-resources ./dist
+cd safari-extension
+xcodebuild build
+```
+
+In Safari: Develop -> Developer Settings -> Allow unsigned extension
+
 ## Stack & tools
 - React, TypeScript
 - Vite, CrxJS

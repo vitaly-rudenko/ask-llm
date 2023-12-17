@@ -22,13 +22,21 @@ export async function createPopup(url: string): Promise<[chrome.tabs.Tab, chrome
   return [tab, window]
 }
 
-export async function detectLanguage(context: string) {
-  const languageDetectionResult = await chrome.i18n.detectLanguage(context)
+export async function detectLanguage(context: string, fallbackTab: chrome.tabs.Tab) {
+  let detectedLanguages: string[] = []
+  try {
+    detectedLanguages = (await chrome.i18n.detectLanguage(context))
+      .languages.map(l => l.language)
+  } catch {
+    try  {
+      detectedLanguages = [await chrome.tabs.detectLanguage(fallbackTab.id!)]
+    } catch {}
+  }
 
-  for (const language of languageDetectionResult.languages) {
-    if (['en', 'eng'].includes(language.language)) return Languages.ENGLISH
-    if (['uk', 'ukr'].includes(language.language)) return Languages.UKRAINIAN
-    if (['ru', 'rus'].includes(language.language)) return Languages.RUSSIAN
+  for (const language of detectedLanguages) {
+    if (['en', 'eng', 'en-US', 'en-GB'].includes(language)) return Languages.ENGLISH
+    if (['uk', 'ukr', 'uk-UA'].includes(language)) return Languages.UKRAINIAN
+    if (['ru', 'rus', 'ru-RU'].includes(language)) return Languages.RUSSIAN
   }
 
   return Languages.ENGLISH
