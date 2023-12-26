@@ -41,7 +41,9 @@ export function generatePrompt(input: {
       : input.language === Languages.RUSSIAN
       ? `Представленный текст:`
       : `Provided text:`,
-    `"${input.context}"`,
+    '"""',
+    input.context,
+    '"""',
     '',
     generateActionPrompt(input),
   ].join('\n')
@@ -62,7 +64,7 @@ function generateActionPrompt(input: {
 
   if (input.language === Languages.UKRAINIAN) {
     return {
-      [Actions.EXPLAIN]: 'Поясни наданий текст та надай висновки чи додаткові деталі за необхідності.',
+      [Actions.EXPLAIN]: 'Поясни наданий текст та надай висновки чи додаткові деталі за необхідності:',
       [Actions.SUMMARIZE]: 'Надай короткий опис (TL;DR) використовуючи наданий текст.',
       [Actions.IMPROVE]: oneLine`
         Переглянь наданий текст, виправ граматичні помилки, усунь помилки друку,
