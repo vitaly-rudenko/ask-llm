@@ -43,7 +43,11 @@ async function openChatTab(desiredLlm: Llm) {
   )
 
   await waitForChat(tab)
-  await chrome.storage.local.set({ tabId: tab.id, llm: desiredLlm })
+  await chrome.storage.local.set({
+    windowId: tab.windowId,
+    tabId: tab.id,
+    llm: desiredLlm,
+  })
 
   return tab
 }

@@ -10,6 +10,22 @@ const Targets = {
 
 type Target = typeof Targets[keyof typeof Targets]
 
+chrome.tabs.onRemoved.addListener(async () => {
+  const { windowId } = await chrome.storage.local.get(['windowId'])
+  if (!windowId) return
+
+  try {
+    const window = await chrome.windows.get(windowId, { populate: true })
+    if (!window.tabs) return
+
+    const nonEmptyTabs = await window.tabs.filter(tab => !['', 'chrome://newtab/', 'about:blank'].includes(tab.url!))
+    if (nonEmptyTabs.length > 0) return
+
+    await chrome.windows.remove(windowId)
+    await chrome.storage.local.remove(['windowId', 'tabId', 'llm'])
+  } catch {}
+})
+
 chrome.runtime.onInstalled.addListener(async () => {
   const parentId = chrome.contextMenus.create({
     id: 'ask-llm',
