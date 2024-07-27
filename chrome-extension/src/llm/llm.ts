@@ -18,6 +18,7 @@ export const Languages = {
 
 export const Llms = {
   CHATGPT: 'chatgpt',
+  CLAUDE: 'claude',
   BARD: 'bard',
 } as const
 

@@ -46,33 +46,10 @@ chrome.runtime.onInstalled.addListener(async () => {
     }
   }
 
-  let separatorId = 0
-  function addSeparator() {
-    chrome.contextMenus.create({ id: `${parentId}:separator-${++separatorId}`, type: 'separator', contexts: ['all'], parentId })
-  }
-
-  addAction(Actions.USE, { page: 'Use page as context...', selection: 'Use selection as context...', link: 'Use link as context...' })
-  addAction(Actions.TRANSLATE, { page: 'Translate page...', selection: 'Translate selection...', link: 'Translate link...' })
-  addAction(Actions.ANSWER, { page: 'Write an answer to page...', selection: 'Write an answer to selection...', link: 'Write an answer to link...' })
-
-  addSeparator()
-
   addAction(Actions.EXPLAIN, { page: 'Explain page', selection: 'Explain selection', link: 'Explain link' })
   addAction(Actions.SUMMARIZE, { page: 'Summarize page (TL;DR)', selection: 'Summarize selection (TL;DR)', link: 'Summarize link (TL;DR)' })
   addAction(Actions.IMPROVE, { page: 'Proofread && improve page', selection: 'Proofread && improve selection', link: 'Proofread && improve link' })
   addAction(Actions.QUIZ, { page: 'Create a quiz for page', selection: 'Create a quiz for selection', link: 'Create a quiz for link' })
-
-  addSeparator()
-
-  const { useBard = false } = await chrome.storage.local.get(['useBard'])
-  chrome.contextMenus.create({
-    id: `${parentId}:use-bard`,
-    title: 'Use Google Bard',
-    contexts: ['all'],
-    checked: useBard,
-    type: 'checkbox',
-    parentId,
-  })
 })
 
 chrome.contextMenus.onClicked.addListener(async (event, tab) => {
@@ -101,15 +78,12 @@ chrome.contextMenus.onClicked.addListener(async (event, tab) => {
     const context = sanitizeContext(unsanitizedContext)
     if (!context) return
 
-    const { useBard } = await chrome.storage.local.get(['useBard'])
     await askInChat({
-      llm: useBard ? Llms.BARD : Llms.CHATGPT,
+      llm: Llms.CLAUDE,
       language: await detectLanguage(context),
       context,
       action,
     })
-  } else if (menuId ==='ask-llm:use-bard') {
-    await chrome.storage.local.set({ useBard: event.checked })
   }
 })
 
